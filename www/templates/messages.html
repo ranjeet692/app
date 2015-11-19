@@ -1,0 +1,12 @@
+<ion-view style="" title="Messages">
+    <ion-content class="has-header" padding="true">
+        <ion-list type="list" style="">
+            <ion-item class="item item-thumbnail-left" href ng-repeat="user in chatMembers" ng-click="startChatting(user, userList[user].displayName)">
+                <img ng-src="{{userList[user].picture.replace('large', '') || defaultPicture }}">
+                <h2>{{userList[user].displayName}}</h2>
+                <p>{{userList[user].seller}} &nbsp; &nbsp;{{userList[user].buyer}}</p>
+                <small ng-show="$root.activeUserList[user]">online</small>
+            </ion-item>
+        </ion-list>
+    </ion-content>
+</ion-view>

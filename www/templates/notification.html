@@ -1,0 +1,23 @@
+<ion-view style="" title="Notification">
+    <ion-content class="has-header" padding="true">
+        <div style="" class="list card">
+            <div class="item" ng-repeat="notification in notificationData">
+              <div class="item-avatar" ng-hide="notification.document.notice" ng-click="post(notification)">
+                <img ng-src="{{ userDictionary[notification.document.post.document.user.document._id || notification.document.groupPost.document.user.document._id].picture || defaultPicture }}" >
+                <h2>new Post By {{ userDictionary[notification.document.post.document.user.document._id || notification.document.groupPost.document.user.document._id].displayName || defaultName }}</h2>
+                <span ng-show="{{notification.document.groupPost}}" class="">&nbsp;&nbsp;<i><strong>(Group)</strong></i></span>
+                <p>{{notification.document.post.document.information || notification.document.groupPost.document.information}}</p>
+                <p><small><span class="text-info" style="font-weight:600;" data-livestamp="{{timeConversion(notification.document.createdAt) }}"></span></small></p>
+              </div>
+              <div class="item-avatar" ng-show="notification.document.notice" ng-click="showAlert('{{ notification.document.notice.user.document._id }}','{{notification.document.notice.message}}')">
+                <img ng-src="{{ userDictionary[notification.document.notice.user.document._id].picture || defaultPicture }}" >
+                <h2><span><strong class="text-primary">{{ userDictionary[notification.document.notice.user.document._id].displayName || defaultName }}</strong>{{notification.document.notice.message}}</span></h2>
+                <p>
+									{{notification.document.notice.feed}}
+								</p>
+                <p><small><span class="text-info" style="font-weight:600;" data-livestamp="{{timeConversion(notification.document.createdAt) }}"></span></small></p>
+              </div>
+            </div>
+        </div>
+    </ion-content>
+</ion-view>

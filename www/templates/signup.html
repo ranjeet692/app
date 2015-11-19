@@ -1,0 +1,29 @@
+<ion-view>
+    <ion-content padding="true">
+        <div style="" class="button-bar"></div>
+        <img src="img/fyipe_logo.png" style="padding: 10px; padding-bottom:20px; margin-left:auto; margin-right:auto; display:block;" />
+        <form ng-submit="signup(user)">
+            <label style="" class="item item-input">
+                <input placeholder="Full Name" type="text" ng-model="user.displayName">
+            </label>
+            <label style="" class="item item-input">
+                <input placeholder="Email" type="email" ng-model="user.email">
+            </label>
+            <label style="" class="item item-input">
+                <input placeholder="Password" type="password" ng-model="user.password">
+            </label>
+            <button style="" class="button button-stable button-balanced button-block" type="submit">Sign Up!</button>
+        </form>
+        <div style="" class="button-bar">
+            <button style="color:white;background-color:#3b5998"  class="button button-block  icon-left ion-social-facebook" ng-click="authenticate('facebook')">Facebook</button>
+            <button style="color:white;background-color:#dd4b39" class="button button-block  icon-left ion-social-googleplus" ng-click="authenticate('google')">Google</button>
+        </div>
+        <div style="" class="button-bar">
+            <button style="color:white;background-color:#007bb5" class="button button-block  icon-left ion-social-linkedin" ng-click="authenticate('linkedin')">LinkedIn</button>
+            <button style="color:white;background-color:#00aced" class="button button-block  icon-left ion-social-twitter" ng-click="authenticate('twitter')">Twitter</button>
+        </div>
+        <div style="text-align:center;">
+          <a style="text-decoration:none;" href="#/app/login">Login</a>
+        </div>
+    </ion-content>
+</ion-view>

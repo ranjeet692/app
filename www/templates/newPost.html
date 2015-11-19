@@ -1,0 +1,23 @@
+<ion-view style="" title="New Post">
+    <ion-content class="has-header" padding="true">
+        <form ng-submit="savePost(feed)" name="postForm" style="" class="list">
+            <label style="" name="requirement" class="item item-input">
+              <textarea id="fyipeTextBox" class="form-control" rows="3" mentio  mentio-typed-text="typedTerm"
+                      name="postField"
+                      mentio-items="prof | filter:label:typedTerm"
+                      mentio-select="taggedKeywords(item)"
+                      rows="2"
+                      ng-model="feed.information"
+                      placeholder="Enter an information to sell and add target profession and location. For example 'A four star hotel is planning to buy 20 Toyota Etios @Car Dealer and @Borivali West"
+                      tabIndex = "1"
+                      required>
+                  </textarea>
+            </label>
+            <ion-toggle style="" name="free" ng-model="feed.free" toggle-class="toggle-positive">Free</ion-toggle>
+            <label style="" class="item item-input">
+                <input ng-disabled="feed.free" ng-model="feed.price" placeholder="Price" type="number">
+            </label>
+            <button style="" class="button button-balanced button-block " type="submit" ng-disabled="countOf(feed.information) > 20">Post</button>
+        </form>
+    </ion-content>
+</ion-view>

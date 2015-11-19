@@ -1,0 +1,33 @@
+<ion-view style="" title="Requirement">
+    <ion-content class="has-header has-footer" padding="true">
+        <div style="" class="list card">
+            <div class="item item-avatar">
+                <img ng-src="{{post.document.user.document.picture || defaultPicture }}">
+                <h2 style="color:#0073e6; font-weight:600;">{{post.document.user.document.displayName || defaultName }} <span style="font-size:12px; background: #00a352 none repeat scroll 0 0; color:#fff; padding:2px; padding-left:6px; padding-right:6px; border-radius:3px;"><strong>{{post.document.rate}}</strong></span></h2>
+                <p data-livestamp="{{timeConversion(post.document.createdAt)}}"></p>
+            </div>
+            <div class="item item-body">
+                <img ng-if="post.document.image" class="full-image" ng-src="{{post.document.image}}" >
+                <p>{{ post.document.information}}</p>
+                <p>
+                    <a href="#" class="subdued" ng-show="post.document.price"><strong>&#8377;{{ post.document.price }}</strong></a>
+                    <a href="#" class="subdued" ng-show="post.document.free"><strong>Free</strong></a>
+                    <a href="#" class="pull-right btn btn-success" ng-disabled="post.document.user.document._id === user.document._id || post.commitButton" ng-click="commit($index)">Commit</a>
+                </p>
+            </div>
+            <div class="item tabs tabs-secondary tabs-icon-left">
+                <a class="tab-item" href ng-click="openModal('report')">
+                    Report
+                </a>
+                <a class="tab-item" href="#">
+
+                </a>
+                <span class="tab-item" href="#">
+                    <i class="icon ion-share"></i>
+                    {{post.seenby}}/{{post.sentto}}
+                </span>
+            </div>
+        </div>
+        <ion-infinite-scroll ng-if="!noMoreItemsAvailable" on-infinite="loadMore()" distance="10%"></ion-infinite-scroll>
+    </ion-content>
+</ion-view>

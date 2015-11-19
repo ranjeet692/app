@@ -1,0 +1,56 @@
+<ion-view style="" title="Profile">
+    <ion-content class="has-header" padding="true">
+        <button style="float: right;" class="button button-stable button-clear" ng-click="logout()">Logout</button>
+        <form name="userForm" style="" method="post" >
+          <img ng-src="{{user.picture || 'img/profile.png'}}" alt="Profile" />
+            <label style="" class="item item-input">
+                <input placeholder="Full Name" type="text" ng-model="user.document.displayName">
+            </label>
+            <p ng-show="userForm.name.$invalid && !userForm.name.$pristine" class="help-block">Your name is required.</p>
+            <div style="width: 300px; height: 8px;" class="spacer"></div>
+            <tags-input replace-spaces-with-dashes="false" ng-disabled="disableProfession" ng-model="professionPrimary" name="profession" on-tag-added="professiontagAdded($tag)" on-tag-removed="professiontagRemoved($tag)" display-property="name"
+                  popover="Enter a keyword of your profession or bussiness or services? "
+                  popover-trigger="mouseenter"
+                  popover-placement="top">
+                  <auto-complete source="loadProfessionTags($query)"></auto-complete>
+            </tags-input>
+            <p ng-show="professionInputValid" class="help-block">Your profession is not valid.</p>
+						<p ng-show="professionInputField" class="help-block">Only one profession is allowed</p>
+            <div style="width: 300px; height: 7px;" class="spacer"></div>
+            <tags-input replace-spaces-with-dashes="false" name="location" ng-disabled="disableLocation" ng-model="locationPrimary" display-property="name" on-tag-added="locationtagAdded($tag)" on-tag-removed="locationtagRemoved($tag)"
+							popover="Enter a location of your profession or bussiness or services? "
+							popover-trigger="mouseenter"
+							popover-placement="top">
+      					<auto-complete source="loadLocationTags($query)"></auto-complete>
+    				</tags-input>
+            <p ng-show="locationInputValid " class="help-block">Your location is not valid</p>
+						<p ng-show="locationInputField" class="help-block">Only one location is allowed</p>
+            <div style="width: 300px; height: 8px;" class="spacer"></div>
+            <label style="" class="item item-input" ng-model="user.phone">
+                <input placeholder="Phone" type="text" ng-pattern="PhonePattern" ng-model="user.document.phone">
+            </label>
+            <p ng-show="userForm.phone.$error.pattern" class="help-block">Invalid Phone Number</p>
+						<p ng-show="userForm.phone.$error.required && !userForm.name.$pristine" class="help-block">Phone Number is Required</p>
+            <div style="width: 300px; height: 6px;" class="spacer"></div>
+            <tags-input ng-model="professionTagList" replace-spaces-with-dashes="false" on-tag-added="validProfession1($tag)"  display-property="name"
+							popover="Enter more profession(s)"
+							popover-trigger="mouseenter"
+							popover-placement="top">
+      					<auto-complete source="loadProfessionTags($query)"></auto-complete>
+    				</tags-input>
+            <p ng-show="professionInputValid1" class="help-block">Your profession is not valid</p>
+            <div style="width: 300px; height: 7px;" class="spacer"></div>
+            <tags-input replace-spaces-with-dashes="false" ng-model="locationTagList" on-tag-added="validLocation1($tag)"  display-property="name"
+							popover="Enter more location(s)"
+							popover-trigger="mouseenter"
+							popover-placement="top">
+      					<auto-complete source="loadLocationTags($query)"></auto-complete>
+    				</tags-input>
+						<p ng-show="locationInputValid1 " class="help-block">Your location is not valid</p>
+             <div style="" class="button-bar">
+                 <!--<button style="" class="button button-stable button-icon" type="submit">Update!</button>-->
+                 <button class="button button-stable button-balanced button-block" ng-click="updateProfile()" ng-disabled = "userForm.name.$invalid || userForm.phone.$invalid || locationInputField || professionInputField || locationInputValid || professionInputValid " >Update</button>
+             </div>
+        </form>
+    </ion-content>
+</ion-view>
