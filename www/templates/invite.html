@@ -1,11 +1,13 @@
 <ion-view style="" title="Invite">
     <ion-content class="has-header" padding="true">
-      <div style="" class="list">
-        <a class="item item-thumbnail-left" href="#">
-          <img src="cover.jpg">
-          <h2>User Name</h2>
-          <button class="button button-balanced button-small">Invite</button>
-        </a>
+      <div style="" class="list" ng-show="phoneContacts">
+        <div class="item" ng-repeat="contact in phoneContacts">
+          <a class="item item-thumbnail-left" href ng-show="contact.phoneNumbers">
+            <img src="img/profile.png">
+            <h2>{{ contact.name.formatted }}</h2>
+            <button class="button button-balanced button-small" ng-click="sendSMS(contact.phoneNumbers[0].value)">Invite</button>
+          </a>
+        </div>
       </div>
     </ion-content>
 </ion-view>

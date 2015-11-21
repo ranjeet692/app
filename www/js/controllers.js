@@ -11,7 +11,7 @@ angular.module('fyipe.controllers', [])
 
 })
 
-.controller('LoginCtrl', function($scope, $state, $ionicHistory, $ionicModal, $timeout, $auth){
+.controller('LoginCtrl', function($scope, $state, $http, $ionicHistory, $ionicModal, $timeout, $auth, $cordovaOauth, SocialLogin, Token){
   $scope.lemail = "";
   $scope.lpassword="";
   $scope.authenticate = function(provider) {
@@ -74,6 +74,117 @@ angular.module('fyipe.controllers', [])
 
        });
    };
+   
+   if($scope.isAuthenticated()){
+      $ionicHistory.nextViewOptions({
+          disableBack: true
+      });
+     $state.go('app.requirements');
+   }
+   $scope.facebook = function(){
+     $cordovaOauth.facebook("1607203249542639", ["email", "publish_actions"]).then(function(result) {
+        $scope.result = result;
+        $http.get("https://graph.facebook.com/v2.2/me", { params: { access_token: result.access_token, fields: "id,name,gender,location,website,picture,relationship_status", format: "json" }}).then(function(result) {
+                $scope.profile = result.data;
+                SocialLogin.userAccount($scope.profile, "facebook").then(function(data){
+                  Token.createJWT($scope.profile.id).then(function(token){
+                    $auth.setToken(token);
+                  }).catch(function(err){
+                    
+                  });
+                  $ionicHistory.nextViewOptions({
+                    disableBack: true
+                  });
+                  
+                  if(data.wizard){
+                    $state.go('app.wizard');
+                  }else {
+                    $state.go('app.requirements');
+                  }
+                }).catch(function(err){
+                  
+                });
+            }, function(error) {
+                alert("There was a problem getting your profile.");
+                console.log(error);
+            });
+    }, function(error) {
+        // error
+        alert("Unable to connect with facebook.");
+    });
+   };
+   
+   $scope.google = function(){
+     $cordovaOauth.google("773677402406-286mu1bppkes52dhsnicq9g3tm8tjdta.apps.googleusercontent.com", ['profile', 'email', 'https://www.google.com/m8/feeds/', 'https://www.googleapis.com/auth/plus.login']).then(function(result) {
+        $scope.result = result;
+        $http.get("https://www.googleapis.com/plus/v1/people/me/openIdConnect", {headers:{ Authorization: 'Bearer ' + result.access_token }}, {params:{format: "json"}}).then(function(result){
+          $scope.profile = result.data;
+          SocialLogin.userAccount($scope.profile, "google").then(function(data){
+                  Token.createJWT($scope.profile.sub).then(function(token){
+                    $auth.setToken(token);
+                  }).catch(function(err){
+                    
+                  });
+                  $ionicHistory.nextViewOptions({
+                    disableBack: true
+                  });
+                  
+                  if(data.wizard){
+                    $state.go('app.wizard');
+                  }else {
+                    $state.go('app.requirements');
+                  }
+                }).catch(function(err){
+                  
+                });
+        }, function(error){
+          alert("Unable to fetch profile data");
+        });
+    }, function(error) {
+        // error
+        alert("Unable to connect with google.");
+    });
+   };
+   
+   $scope.linkedIn = function(){
+     $cordovaOauth.linkedin("77alkkzow0uz50", 'A4A2kdqpUbljnx7V',["r_emailaddress"]).then(function(result) {
+        $scope.result = result;
+        $http.get("https://api.linkedin.com/v1/people/~:(id,first-name,last-name,email-address,picture-url)", {params:{oauth2_access_token: result.access_token, format: 'json'}}).then(function(result){
+          $scope.profile = result.data;
+          SocialLogin.userAccount($scope.profile, "linkedin").then(function(data){
+                  Token.createJWT($scope.profile.id).then(function(token){
+                    $auth.setToken(token);
+                  }).catch(function(err){
+                    
+                  });
+                  $ionicHistory.nextViewOptions({
+                    disableBack: true
+                  });
+                  
+                  if(data.wizard){
+                    $state.go('app.wizard');
+                  }else {
+                    $state.go('app.requirements');
+                  }
+                }).catch(function(err){
+                  
+                });
+        }, function(error){
+          alert("Unable to fetch profile data from linkedIn");
+        });
+    }, function(error) {
+        // error
+        alert("Unable to connect with linkedIn.");
+    });
+   };
+   
+   $scope.twitter = function(){
+     $cordovaOauth.twitter("nFq8ge5PHqi9ELOqkC6OCs18O", "ks9tuziy7kjRQc9WMsib9n6YNpGf7rB5wKhlVeiVUqVGXwWCiH").then(function(result){
+       
+     }, function(error){
+       alert("Unable to connect to Twitter.");
+     });
+   };
 })
 .controller('LogoutCtrl', function($rootScope, $scope, $ionicModal, $timeout, $auth){
   if (!$auth.isAuthenticated()) {
@@ -83,8 +194,18 @@ angular.module('fyipe.controllers', [])
     $rootScope.userProfile = null;
   });
 })
-.controller('BalanceCtrl', function($scope, $ionicModal, $timeout){
-
+.controller('BalanceCtrl', function($rootScope, $scope, $ionicModal, $timeout, Account){
+  Account.getProfile()
+    .success(function(data) {
+      $scope.user = data;
+      $rootScope.userProfile = CB.fromJSON(data);
+      
+    })
+    .error(function(error) {
+      
+    });
+    
+    
 })
 .controller('RequirementsCtrl', function($rootScope, $scope, $state, $ionicModal, $timeout, Account, FeedService, ProfessionService, LocationService, User, Payment){
   $scope.feedCount = 0;
@@ -250,7 +371,7 @@ angular.module('fyipe.controllers', [])
            });
          }
        }).error(function(error){
-         toastr.error(error, "Can Not Load More");
+         
        });
    };
 
@@ -390,7 +511,7 @@ angular.module('fyipe.controllers', [])
 
 
 })
-.controller('NewPostCtrl', function($rootScope, $scope, $ionicModal, $timeout, Account, ProfessionService, LocationService, FeedService, _){
+.controller('NewPostCtrl', function($rootScope, $scope, $ionicModal, $stateParams, $timeout, Account, ProfessionService, LocationService, FeedService, GroupService, _){
   $scope.prof = [];
   $scope.professionTagged = [];
   $scope.locationTagged = [];
@@ -410,7 +531,7 @@ angular.module('fyipe.controllers', [])
          });
        })
        .error(function(error) {
-         toastr.error(error, "Error While Loading User Profile");
+         
        });
    }else{
      $scope.user = $rootScope.userProfile;
@@ -430,7 +551,7 @@ angular.module('fyipe.controllers', [])
    if(!$rootScope.location){
      LocationService.getSource().success(function(list){
        buildLocationTags(list);
-       $rootScope.location = CB.fromJSON(list);
+       $rootScope.location = list;
      }).error(function(err){
 
      });
@@ -443,7 +564,8 @@ angular.module('fyipe.controllers', [])
      $scope.professionItems = _.pluck(list, 'document');
      $scope.professionTags = _.pluck($scope.professionItems, 'name');
      for(var i=0; i<$scope.professionTags.length; i++){
-       $scope.prof.push({"label": $scope.professionItems[i].name, "id":$scope.professionItems[i]._id, "table":$scope.professionItems[i]._tableName });
+       if($scope.professionItems[i])
+        $scope.prof.push({"label": $scope.professionItems[i].name, "id":$scope.professionItems[i]._id, "table":$scope.professionItems[i]._tableName });
      }
    }
 
@@ -451,7 +573,8 @@ angular.module('fyipe.controllers', [])
      var list = CB.toJSON(obj);
      $scope.locationItems = _.pluck(list, 'document');
      for(var i=0; i<$scope.locationItems.length; i++){
-       $scope.prof.push({"label": $scope.locationItems[i].city+', '+$scope.locationItems[i].country, "id":$scope.locationItems[i]._id, "table":$scope.locationItems[i]._tableName });
+       if($scope.locationItems[i])
+        $scope.prof.push({"label": $scope.locationItems[i].city+', '+$scope.locationItems[i].country, "id":$scope.locationItems[i]._id, "table":$scope.locationItems[i]._tableName });
      }
    }
 
@@ -515,21 +638,354 @@ angular.module('fyipe.controllers', [])
         feed.free = false;
         feed.price = null;
         $scope.picFile = "";
-        FeedService.save(feedData).then(function(obj) {
+        if($stateParams.type === "group"){
+          GroupService.save(feedData).then(function(obj){
+            
+          }).catch(function(err){
+            
+          }); 
+        }else{
+          FeedService.save(feedData).then(function(obj) {
 
         }).catch(function(err){
 
-        });
+        });  
+        }
       }else{
         $scope.postPending = false;
       }
   };
 })
-.controller('PostbymeCtrl', function($scope, $ionicModal, $timeout){
+.controller('PostbymeCtrl', function($rootScope, $scope, $ionicModal, $timeout,  Account,FeedService, Payment){
+  $scope.noSoldData = false;
+  $scope.noPostData  = false;
+  $scope.postPending = true;
+  $scope.soldFeed = [];
+  $scope.postFeed = [];
+  $scope.soldDealStatus = [];
+  $scope.feedCount = 0;
+  $scope.defaultPicture = "img/profile.png";
+  $scope.ratingBuyer = function(data){
+    if(data){
+      if(data.bought > 0){
+        if(data.accepted > 0){
+          return data.accepted+'/'+data.bought;
+        }else{
+          return "New Buyer";
+        }
+      }
+      return "New Buyer";
+    }else{
+      return "New Buyer";
+    }
+  }
+  if(!$rootScope.userProfile){
+    Account.getProfile()
+      .success(function(data) {
+        $scope.user = data;
+        $rootScope.userProfile = CB.fromJSON(data);
+        getSoldDeal();
+        getPostByMe();
+      })
+      .error(function(error) {
+        
+    });
+  }else{
+    $scope.user = $rootScope.userProfile;
+    getSoldDeal();
+    getPostByMe();
+  }
 
+
+
+  function getSoldDeal(){
+    FeedService.soldDeal('feed').then(function(data){
+       //$scope.soldFeed = data;
+       $scope.noSoldData = false;
+       $scope.postPending = false;
+       if(data.length <=0 ){
+         $scope.noSoldData = true;
+       }
+       FeedService.soldDeal('group').then(function(groupData){
+         if(groupData.length <=0 ){
+           $scope.noSoldData = true;
+         }else{
+           $scope.noSoldData = false;
+         }
+         if(groupData){ 
+           data = _.union(data, groupData);
+         }
+         $scope.soldFeed = data;
+         for(var i=0; i<data.length; i++){
+           FeedService.soldDealStatus(data[i].document._id, data[i].document.group).then(function(object){
+             if(object[0]){
+               for(var j=0; j<object.length; j++){
+                 var rankData = {"bought": object[j].document.buyer.document.bought, "accepted":object[j].document.buyer.document.accepted};
+                 object[j].document.buyer.document.rate = $scope.ratingBuyer(rankData);
+               }
+               if(object[0].document.feed)
+                  $scope.soldDealStatus[object[0].document.feed.document._id] = object;
+              else if(object[0].document.groupFeed)
+                  $scope.soldDealStatus[object[0].document.groupFeed.document._id] = object;
+             }
+           });
+         }
+       }).catch(function(){
+         $scope.postPending = false;
+       });
+    }).catch(function(err){
+      $scope.noSoldData = true;
+      $scope.postPending = false;
+    });
+  }
+
+  function getPostByMe(){
+    FeedService.postByMe('feed').then(function(data){
+      if(data.length > 0){
+        $scope.noPostData = false;
+        $scope.postFeed = data;
+        $scope.postPending = false;
+      }else{
+        $scope.noPostData = true;
+      }
+      FeedService.postByMe('group').then(function(groupData){
+        //data = _.union(data, groupData);
+        if(groupData.length > 0 )
+          $scope.noPostData = false;
+
+        for(var i=0; i<groupData.length; i++){
+          $scope.postFeed.push(groupData[i]);
+        }
+
+      }).catch(function(){
+
+      });
+    }).catch(function(err){
+      $scope.noPostData = true;
+      $scope.postPending = false;
+    });
+  }
+
+  $scope.timeConversion = function(time){
+    return moment(time).unix();
+  }
 })
-.controller('BoughdealsCtrl', function($scope, $ionicModal, $timeout){
+.controller('BoughtdealsCtrl', function($rootScope, $scope, $state, $ionicModal, $timeout, Account,FeedService, Payment){
+  $scope.noPendingData = false;
+  $scope.noBoughtData = false;
+  $scope.postPending = true;
+  $scope.pendingFeed = [];
+  $scope.boughtFeed = [];
+  $scope.dealOperation = [];
+  $scope.loadDataStatus = false;
+  $scope.feedCount = 0;
+  $scope.defaultPicture = "partials/assets/avatars/profile.png";
+  $scope.rating = function(data){
+    if(data){
+      if(data.post > 0){
+        if(data.closed > 0){
+          return "Closed "+data.closed+' | '+"Opened "+data.post;
+        }else{
+          return "New Seller";
+        }
+      }
+      return "New Seller";
+    }else{
+      return "New Seller";
+    }
+  }
+  $scope.ratingBuyer = function(data){
+    if(data){
+      if(data.bought > 0){
+        if(data.accepted > 0){
+          return data.accepted+'/'+data.bought;
+        }else{
+          return "New Buyer";
+        }
+      }
+      return "New Buyer";
+    }else{
+      return "New Buyer";
+    }
+  }
 
+  if(!$rootScope.userProfile){
+    Account.getProfile()
+      .success(function(data) {
+        $scope.user = data;
+        $rootScope.userProfile = CB.fromJSON(data);
+        getPendingDeal();
+        getBoughtDeal();
+        //$scope.getUnReadMessageCount();
+      })
+      .error(function(error) {
+        
+    });
+  }else{
+    $scope.user = $rootScope.userProfile;
+    getPendingDeal();
+    getBoughtDeal();
+  }
+
+  function getPendingDeal(){
+    FeedService.pendingDeal('feed').success(function(pendingData){
+      if(pendingData.length > 0){
+        $scope.noPendingData = false;
+        $scope.postPending = false;
+        for(var i=0; i<pendingData.length; i++){
+            var rankData = {"post": pendingData[i].document.user.document.post, "closed":pendingData[i].document.user.document.closed};
+            pendingData[i].document.rate = $scope.rating(rankData);
+            $scope.pendingFeed.push(pendingData[i]);
+          }
+        }else{
+          $scope.postPending = false;
+          $scope.noPendingData = true;
+        }
+        FeedService.pendingDeal('group').success(function(groupData){
+          //data = _.union(data, groupData);
+          //data = _.sortBy(data, 'createdAt');
+          for(var i=0; i<groupData.length; i++){
+            var rankData = {"post": groupData[i].document.user.document.post, "closed":groupData[i].document.user.document.closed};
+            groupData[i].document.rate = $scope.rating(rankData);
+            $scope.pendingFeed.push(groupData[i])
+          }
+        }).catch(function(err){
+          console.log(err);
+        });
+
+    }).error(function(err){
+       $scope.noPendingData = true;
+       $scope.postPending = false;
+    });
+  }
+
+  function getBoughtDeal(){
+    FeedService.boughtDeals('feed').then(function(data){
+      if(data.length > 0){
+        $scope.noBoughtData = false;
+        $scope.boughtFeed = data;
+        for(var i=0; i<data.length; i++){
+          var rankData = {"post": data[i].document.user.document.post, "closed":data[i].document.user.document.closed};
+          data[i].document.rate = $scope.rating(rankData);
+        }
+        FeedService.boughtDeals('group').then(function(groupData){
+          //data = _.union(data, groupData);
+          //data = _.sortBy(data, 'createdAt');
+          $scope.postPending = false;
+          for(var i=0; i<groupData.length; i++){
+            var rankData = {"post": groupData[i].document.user.document.post, "closed":groupData[i].document.user.document.closed};
+            groupData[i].document.rate = $scope.rating(rankData);
+            $scope.boughtFeed.push(groupData[i]);
+          }
+        }).catch(function(err){
+          console.log(err);
+        });
+      }else{
+        $scope.noBoughtData = true;
+      }
+    }).catch(function(err){
+      toastr.error("Unable to fetch bought deals data","Error");
+      $scope.noBoughtData = true;
+      $scope.postPending = false;
+    });
+  }
+
+  $scope.dealClose = function(feedId, index, post, group){
+    $scope.dealOperation[index] = true;
+    var data = {feedId:feedId};
+    var type;
+    if(!group){
+      type = 'feed';
+    }else{
+      type = 'group';
+    }
+    Payment.close(data, type).success(function(msg){
+      $scope.pendingFeed.slice(index,1);
+      toastr.success("Deal Closed");
+      mixpanel.track('Deal Closed',{
+        "Information":post.document.information,
+        "Seller": post.document.user.document.email,
+        "Price": post.document.price
+      });
+      $scope.dealOperation[index] = false;
+      $scope.pendingFeed.splice(index, 1);
+      window.location.href = "/#/account";
+    }).error(function(err){
+      toastr.error(err, "Error");
+      $scope.dealOperation[index] = false;
+    });
+  };
+
+  $scope.refund = function(feedId, index, post, group){
+    $scope.dealOperation[index] = true;
+    var data;
+    var transaction = new CB.CloudQuery('buyerStatus');
+    var userObj = new CB.CloudObject('User',$scope.user.document._id);
+    var feedObj;
+    if(!group){
+      feedObj = new CB.CloudObject('Feed',feedId);
+      data = {"feed": feedObj};
+    }else{
+      feedObj = new CB.CloudObject('GroupFeed',feedId);
+      data = {"groupfeed": feedObj};
+    }
+
+    Payment.refund(data).success(function(status){
+      toastr.success(status);
+      mixpanel.track('Refund',{
+        "Information":post.document.information,
+        "Seller": post.document.user.document.email,
+        "Price": post.document.price
+      });
+      $scope.dealOperation[index] = false;
+      $scope.pendingFeed.splice(index,1);
+    }).error(function(err){
+      $scope.dealOperation[index] = false;
+      toastr.error(err, "Error");
+    });
+  };
+
+  $scope.timeConversion = function(time){
+    return moment(time).unix();
+  };
+
+  $scope.openUser = function(index, type) {
+    var modalInstance;
+    if(type === "pending"){
+      modalInstance = $modal.open({
+        animation: $scope.animationsEnabled,
+        templateUrl: 'userModal.html',
+        controller: 'userModalCtrl',
+          resolve: {
+                  data: function(){
+                    return $scope.pendingFeed[index].document;
+                  }
+          }
+      });
+    }else{
+      modalInstance = $modal.open({
+        animation: $scope.animationsEnabled,
+        templateUrl: 'userModal.html',
+        controller: 'userModalCtrl',
+          resolve: {
+                  data: function(){
+                    return $scope.boughtFeed[index].document;
+                  }
+          }
+      });
+    }
+
+
+      modalInstance.result.then(function(data) {
+
+      }, function () {
+          $log.info('Modal dismissed at: ' + new Date());
+      });
+  };
+
+  $scope.startChat = function(userId, name){
+    $state.go('app.chat', {'userId': userId, 'name': name});
+  };
 })
 .controller('NotificationCtrl', function($rootScope, $scope, $state, $ionicModal, $ionicPopup, $timeout, FeedService, Account){
    $scope.userDictionary = [];
@@ -925,8 +1381,197 @@ angular.module('fyipe.controllers', [])
   };
 
 })
-.controller('GroupCtrl', function($scope, $ionicModal, $timeout){
+.controller('GroupCtrl', function($rootScope, $scope, $ionicModal, $timeout,  $state, Account, Payment, GroupService, FeedService){
+  $scope.defaultPicture = "img/profile.png";
+  $scope.feedFromDB=[];
+  $scope.feedCount = 0;
+  $scope.members =[];
+  $scope.professionTagged = [];
+  $scope.professionTags = [];
+  $scope.professionItems = [];
+  $scope.prof = [];
+  $scope.currentUser;
+  $scope.cbUserQuery;
+  $scope.chatUser = new CB.CloudObject('User');
+  $scope.cbUserOuery;
+  $scope.countPerUser = [];
+  $scope.postPending = false;
+  $scope.nostream = false;
+  $scope.nomember = false;
+  $scope.ownIt = [];
+  $scope.soldDealStatus = [];
+  $scope.soldDeal;
+  $scope.pendingFeed=[];
+  $scope.spinner = true;
+  $scope.dealOperation = [];
+  $scope.picFile="";
+  $scope.groupName = "";
+  
+  $scope.countOf = function(text) {
+     var s = text ? text.split(/\s+/) : 0; // it splits the text on space/tab/enter
+     return s ? s.length : '';
+  };
+  
+  $scope.newPost = function(){
+    $state.go('app.newpost', {'type':'group'});
+  };
+  $scope.rating = function(data){
+    if(data){
+      if(data.post > 0){
+        if(data.closed > 0){
+          return "Closed "+data.closed+' | '+"Opened "+data.post;
+        }else{
+          return "New Seller";
+        }
+      }
+      return "New Seller";
+    }else{
+      return "New Seller";
+    }
+  };
 
+  $scope.ratingBuyer = function(data){
+    if(data){
+      if(data.bought > 0){
+        if(data.accepted > 0){
+          return data.accepted+'/'+data.bought;
+        }else{
+          return "New Buyer";
+        }
+      }
+      return "New Buyer";
+    }else{
+      return "New Buyer";
+    }
+  };
+
+  Account.getProfile()
+    .success(function(data) {
+      $scope.user = data;
+      $rootScope.userProfile = data;
+      $scope.cbUserOuery = new CB.CloudQuery('User');
+      $scope.cbUserOuery.get($scope.user.document._id, {
+        success: function(obj){
+          $scope.currentUser = obj;
+          GroupService.groupName(obj.document.location.document._id).then(function(name){
+            $scope.groupName = name;
+          }).catch(function(err){
+
+          });
+        }
+      });
+    })
+    .error(function(error) {
+
+    });
+
+    GroupService.fetch($scope.feedCount)
+      .success(function(data){
+          if(data.length > 0 ){
+            $scope.feedFromDB = data;
+            for(var i=0; i<$scope.feedFromDB.length; i++){
+              rankData = {"post":$scope.feedFromDB[i].document.post,"closed":$scope.feedFromDB[i].document.closed};
+              $scope.feedFromDB[i].document.rate = $scope.rating(rankData);
+              $scope.feedFromDB[i].isCollapsed = true;
+            }
+            GroupService.ownIt(data).then(function(object){
+              for (var i = 0; i < object.length; i++) {
+                if(object[i].document.groupFeed)
+                  $scope.ownIt[object[i].document.groupFeed.document._id] = object[i];
+              }
+            });
+          }else{
+            $scope.nostream = true;
+          }
+      })
+      .error(function(err){
+        $scope.feedFromDB = [];
+        $scope.nostream = true;
+      });
+
+      $scope.taggedKeywords = function(item){
+          if(item.table == "Profession"){
+            $scope.professionTagged.push(item);
+          }
+          return "@"+item.label;
+      };
+      
+       $scope.loadMore = function(){
+        $scope.loadDataStatus = true;
+        $scope.feedCount += 5;
+        GroupService.fetch($scope.feedCount).success(function(obj){
+            for(i=0; i<obj.length; i++){
+              rankData = {"post":obj[i].document.post,"closed":obj[i].document.closed};
+              obj[i].document.rate = $scope.rating(rankData);
+              obj[i].isCollapsed = true;
+              $scope.feedFromDB.push(obj[i]);
+            }
+            FeedService.ownIt(obj).then(function(object){
+              for (var i = 0; i < object.length; i++) {
+                $scope.ownIt[object[i].document.feed.document._id] = object[i];
+                console.log($scope.ownIt);
+              }
+            });
+            var soldFeed = _.pluck(obj, "document");
+            soldFeed = _.where(soldFeed, {soldToUser:true});
+            $scope.loadDataStatus = false;
+          }).error(function(error){
+            
+          });
+      };
+
+      $scope.dealClose = function(feedId, index, post){
+        $scope.dealOperation[index] = true;
+        var data = {feedId:feedId};
+        Payment.close(data, 'group').success(function(msg){
+          $scope.dealOperation[index] = false;
+          $scope.ownIt[post.document._id].document.dealStatus = "close";
+          $state.go('app.balance');
+        }).error(function(err){
+          $scope.dealOperation[index] = false;
+        });
+      };
+
+      $scope.refund = function(feedId, index, post){
+        $scope.dealOperation[index] = true;
+        var transaction = new CB.CloudQuery('buyerStatus');
+        var feedObj = new CB.CloudObject('GroupFeed',feedId);
+        var userObj = new CB.CloudObject('User',$scope.user.document._id);
+        transaction.equalTo('groupFeed',feedObj);
+        transaction.equalTo('buyer',userObj);
+        transaction.equalTo('dealStatus', 'pending');
+        transaction.findOne({
+          success: function(transObject){
+            if(transObject){
+              Payment.refund({"groupfeed":feedObj}).success(function(status){
+                $scope.dealOperation[index] = false;
+                $scope.feedFromDB[index].document.soldToUser = false;
+                $scope.feedFromDB[index].document.user = null;
+              }).error(function(err){
+                $scope.dealOperation[index] = false;
+              });
+            }
+          },
+          error: function(err){
+         
+          }
+        });
+      };
+
+      $scope.commit = function(index){
+        $scope.feedFromDB[index].committing = true;
+        var payload = {
+          "groupFeed": $scope.feedFromDB[index].document._id,
+          "amount":$scope.feedFromDB[index].document.price
+        };
+        Payment.commit(payload).success(function(data){
+          $scope.feedFromDB[index].committing = false;
+          $scope.feedFromDB[index].commitButton= true;
+          $state.go('app.success', {'price': $scope.feedFromDB[index].document.price, 'user': data.user.document._id, 'referenceId': data.referenceId});
+        }).error(function(err){
+          $scope.feedFromDB[index].committing = false;
+        });
+      };
 })
 .controller('ChatCtrl', function($rootScope, $scope, $state, $ionicScrollDelegate, $ionicModal, $stateParams, $timeout, Account, Rating){
   $scope.user = $stateParams.name;
@@ -1344,8 +1989,36 @@ angular.module('fyipe.controllers', [])
   };
 
 })
-.controller('InviteCtrl', function($scope, $ionicModal, $timeout){
-
+.controller('InviteCtrl', function($scope, $cordovaContacts, $cordovaSms){
+ 
+  $scope.getContacts = function() {
+    $scope.phoneContacts = [];
+    function onSuccess(contacts) {
+      for (var i = 0; i < contacts.length; i++) {
+        var contact = contacts[i];
+        $scope.phoneContacts.push(contact);
+      }
+    };
+    
+    function onError(contactError) {
+      alert(contactError);
+    };
+    var options = {};
+    options.multiple = true;
+    $cordovaContacts.find(options).then(onSuccess, onError);
+  };
+  
+  $scope.sendSMS = function(number){
+    var text="Your friend invited you to join Fyipe: click here to join http://fyipe.com";
+    var options = {};
+		$cordovaSms.send(number.toString(), text, options).then(function() {
+        alert('Invitation Sent');
+      }, function(error) {
+        // An error occurred
+		    //alert('not sent');
+      });
+  }; 
+  $scope.getContacts();
 })
 .controller('PlaylistCtrl', function($scope, $stateParams) {
 });

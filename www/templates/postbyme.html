@@ -1,28 +1,53 @@
 <ion-view style="" title="Post By me">
     <ion-content class="has-header" padding="true">
-        <div style="" class="list card">
-            <div class="item item-avatar">
-                <img src="">
-                <h2>Ranjeet Kumar</h2>
-                <p>5 hours ago</p>
+        <div ng-show="noPostData&&noSoldData">
+			<p class="text-center"><span class="text-info" style="font-size:22px; color:#999;"><strong>No Posted Deals Available</strong></span></p>
+		</div>
+        <!-- Sold Deals-->
+        <div style="" class="list card" ng-if="soldFeed.length>0">
+            <div class="item" ng-repeat="post in soldFeed">
+                <div class=" item item-avatar">
+                    <img ng-src="{{post.document.user.document.picture || defaultPicture }}" >
+                    <h2>Me</h2>
+                    <p>
+                        <span data-livestamp="{{timeConversion(post.document.createdAt)}}"></span>
+                        <span class="groupTag" ng-show="post.document.group"><strong>Group</strong></span>
+                    </p>
+                </div>
+                <div class="item item-body">
+                    <img ng-if="post.document.image" class="full-image" ng-src="{{post.document.image}}">
+                    <p>{{post.document.information}}</p>
+                    <p>
+                        <a href="#" class="subdued">
+                            <span ng-show="post.document.free">free</span>
+                            <span ng-show="!post.document.free">{{ post.document.price }}</span>
+                        </a>
+                        <a href="/#/postbyme/post" class="subdued">Buyer's List</a>
+                    </p>
+                </div>
             </div>
-            <div class="item item-body">
-                <img class="full-image" src="delorean.jpg">
-                <p>@Software Deveoper @Mumbai</p>
-                <p>
-                    <a href="#" class="subdued">1000</a>
-                    <a href="/#/postbyme/post" class="subdued">Buyer's List</a>
-                </p>
-            </div>
-            <div class="item tabs tabs-secondary tabs-icon-left">
-
-                <a class="tab-item" href="#">
-                    10 commits
-                </a>
-                <a class="tab-item" href="#">
-                    <i class="icon ion-share"></i>
-                    60/100
-                </a>
+        </div>
+        <!--feed-->
+          <div style="" class="list card" ng-if="postFeed.length>0">
+            <div class="item" ng-repeat="post in postFeed">
+                <div class="item item-avatar">
+                    <img ng-src="{{post.document.user.document.picture || defaultPicture }}" >
+                    <h2>Me</h2>
+                    <p>
+                        <span data-livestamp="{{timeConversion(post.document.createdAt)}}"></span>
+                        <span class="groupTag" ng-show="post.document.group"><strong>Group</strong></span>
+                    </p>
+                </div>
+                <div class="item item-body">
+                    <img ng-if="post.document.image" class="full-image" ng-src="{{post.document.image}}">
+                    <p>{{post.document.information}}</p>
+                    <p>
+                        <a href="#" class="subdued">
+                            <span ng-show="post.document.free">free</span>
+                            <span ng-show="!post.document.free">{{ post.document.price }}</span>
+                        </a>
+                    </p>
+                </div>
             </div>
         </div>
     </ion-content>

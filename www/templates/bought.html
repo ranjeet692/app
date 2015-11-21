@@ -1,28 +1,85 @@
-<ion-view style="" title="Post By me">
+<ion-view style="" title="Bought Deals">
     <ion-content class="has-header" padding="true">
-        <div style="" class="list card">
-            <div class="item item-avatar">
-                <img src="">
-                <h2>Ranjeet Kumar</h2>
-                <p>5 hours ago</p>
+        <!--pending deals-->
+        <div style="" class="list card" ng-if="pendingFeed.length>0">
+            <div class="item" ng-repeat="post in pendingFeed">
+                <div class="item item-avatar">
+                    <img ng-src="{{post.document.user.document.picture || defaultPicture }}">
+                    <h2>{{post.document.user.document.displayName || defaultName }}&nbsp;&nbsp;&nbsp;<span class="rating"><strong>{{post.document.rate}}</strong></span></h2>
+                    <p>
+                        <small>
+                            <span class="text-info" data-livestamp="{{timeConversion(post.document.createdAt)}}"></span>
+                            <span class="groupTag" ng-show="post.document.group"><strong>Group</strong></span>
+                        </small>
+                    </p>
+                </div>
+                <div class="item item-body">
+                    <img class="full-image" ng-src="{{post.document.image}}">
+                    <p>{{post.document.information}}</p>
+                   <div class="row">
+                        <div class="col-33">
+                            <a href="#" class="subdued" ng-show="post.document.price"><strong>&#8377;{{ post.document.price }}</strong></a>
+                            <a href="#" class="subdued" ng-show="post.document.free"><strong>Free</strong></a>
+                        </div>
+                   </div>
+                   <div>
+                    <div>
+                      <span><strong style="color:#555;">Contact:&nbsp;</strong><span class="text-success">{{post.document.user.document.phone}}</span></span>
+                      <span><strong style="color:#555;">Email:&nbsp;</strong><span class="text-success">{{post.document.user.document.email}}</span></span>
+                    </div>
+                    <div class="row">
+                      <div class="col" ng-hide="dealOperation[$index]">
+                        <button class="button-light  button-small button-block" style="cursor:pointer;" title="chat" ng-click="startChat(post.document.user.document._id, post.document.user.document.displayName)"><strong><i class="ion-chatboxes"></i></strong></button>
+                      </div>
+                      <div class="col" ng-hide="dealOperation[$index] ">
+                        <button class="cbutton-light  button-small button-block" style="cursor:pointer;" title="close deal" ng-click="dealClose(post.document._id, $index,post, post.document.group)"><strong><i class="ion-checkmark-circled"></i></strong></button>
+                      </div>
+                      <div class="col" ng-hide="dealOperation[$index] ">
+                        <button class="button-light  button-small button-block" style="cursor:pointer;" title="pass deal" ng-click="refund(post.document._id, $index, post, post.document.group)"><strong><i class="ion-close-circled"></i></strong></button>
+                      </div>
+                      <div class="col">
+                        <span class="col" ng-show="dealOperation[$index]"><ion-spinner></ion-spinner></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
             </div>
-            <div class="item item-body">
-                <img class="full-image" src="delorean.jpg">
-                <p>@Software Deveoper @Mumbai</p>
-                <p>
-                    <a href="#" class="subdued">1000</a>
-                    <a href="/#/postbyme/post" class="subdued">Buyer's List</a>
-                </p>
-            </div>
-            <div class="item tabs tabs-secondary tabs-icon-left">
-
-                <a class="tab-item" href="#">
-                    10 commits
-                </a>
-                <a class="tab-item" href="#">
-                    <i class="icon ion-share"></i>
-                    60/100
-                </a>
+        </div>
+        <!--bought deals-->
+        <div style="" class="list card" ng-if="pendingFeed.length>0">
+            <div class="item" ng-repeat="post in pendingFeed">
+                <div class="item item-avatar">
+                    <img ng-src="{{post.document.user.document.picture || defaultPicture }}">
+                    <h2>{{post.document.user.document.displayName || defaultName }}&nbsp;&nbsp;&nbsp;<span class="rating"><strong>{{post.document.rate}}</strong></span></h2>
+                    <p>
+                        <small>
+                            <span class="text-info" data-livestamp="{{timeConversion(post.document.createdAt)}}"></span>
+                            <span class="groupTag" ng-show="post.document.group"><strong>Group</strong></span>
+                        </small>
+                    </p>
+                </div>
+                <div class="item item-body">
+                    <img class="full-image" ng-src="{{post.document.image}}">
+                    <p>{{post.document.information}}</p>
+                   <div class="row">
+                        <div class="col-33">
+                            <a href="#" class="subdued" ng-show="post.document.price"><strong>&#8377;{{ post.document.price }}</strong></a>
+                            <a href="#" class="subdued" ng-show="post.document.free"><strong>Free</strong></a>
+                        </div>
+                   </div>
+                   <div>
+                    <hr/>
+                    <div class="row">
+                      <span class="col"><strong style="color:#555;">Contact:&nbsp;</strong><span class="text-success">{{post.document.user.document.phone}}</span></span>
+                      <span class="col"><strong style="color:#555;">Email:&nbsp;</strong><span class="text-success">{{post.document.user.document.email}}</span></span>
+                    </div>
+                    <div class="row">
+                      <div class="col" ng-hide="dealOperation[$index]">
+                        <button class="button-light  button-small button-block" style="cursor:pointer;" title="chat" ng-click="startChat(post.document.user.document._id, post.document.user.document.displayName)"><strong><i class="ion-chatboxes"></i></strong></button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
             </div>
         </div>
     </ion-content>

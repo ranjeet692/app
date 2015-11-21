@@ -70,9 +70,9 @@
               <p>
                 <div ng-if="post.document.soldToUser">
                     <hr/>
-                    <div class="row">
-                      <span class="col"><strong style="color:#555;">Contact:&nbsp;</strong><span class="text-success">{{post.document.user.document.phone}}</span></span>
-                      <span class="col"><strong style="color:#555;">Email:&nbsp;</strong><span class="text-success">{{post.document.user.document.email}}</span></span>
+                    <div>
+                      <span><strong style="color:#555;">Contact:&nbsp;</strong><span class="text-success">{{post.document.user.document.phone}}</span></span>
+                      <span><strong style="color:#555;">Email:&nbsp;</strong><span class="text-success">{{post.document.user.document.email}}</span></span>
                     </div>
                     <div class="row">
                       <div class="col">
@@ -85,7 +85,7 @@
                         <button ng-show="ownIt[post.document._id].document.dealStatus=='pending'" class="button-light  button-small button-block" style="cursor:pointer;" title="pass deal" ng-click="refund(post.document._id, $index, post)"><strong><i class="ion-close-circled"></i></strong></button>
                       </div>
                       <div class="col">
-                        <span ng-show="ownIt[post.document._id].document.dealStatus=='close'" class="text-primary"><strong>You Have Bought This Deal</strong></span>
+                        <span ng-show="ownIt[post.document._id].document.dealStatus=='close'" class="text-primary"><small>Bought It</small></span>
                       </div>
                       <div class="col">
                         <span class="col" ng-show="dealOperation[$index]"><ion-spinner></ion-spinner></span>

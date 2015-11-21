@@ -23,6 +23,130 @@ angular.module('fyipe.services', [])
       }
     };
   })
+  .factory('SocialLogin', function($http, $q) {
+    return {   
+      userAccount: function(profile, type){
+        var socialMedia = "";
+        var profileId = "";
+        var email = "";
+        var picture = "";
+        var name = "";
+        
+        if(type === "facebook"){
+          
+          socialMedia = "facebook";
+          profileId = profile.id;
+          email = profile.email;
+          name = profile.name; 
+          picture = 'https://graph.facebook.com/' + profile.id + '/picture?type=large';
+          
+        }else if(socialMedia === "google"){
+          
+          socialMedia = "google";
+          profileId = profile.sub;
+          email = profile.email;
+          picture = profile.picture.replace('sz=50', 'sz=200');
+          name = profile.name;
+          
+        }else if(socialMedia === "linkedIn"){
+          
+          socialMedia = "linkedin";
+          profileId = profile.id;
+          email = profile.emailAddress;
+          picture = profile.pictureUrl;
+          name = profile.firstName + ' ' + profile.lastName;
+          
+        }else{
+          
+          var dummyMail = 'randomemail'+ Math.floor((Math.random() * 1000000) + 1000)+'@gmail.com';
+          socialMedia = "twitter";
+          profileId = (profile.id).toString();
+          email = dummyMail;
+          picture = profile.profile_image_url.replace('_normal', '');
+          name = profile.name;
+          
+        }
+        
+        var defer = $q.defer();
+        var cbquery = new CB.CloudQuery('User');
+        cbquery.equalTo(socialMedia.toString(), profileId);
+        cbquery.find({
+          success: function(obj){
+        		if(obj.length > 0){
+              var token = "";
+        			if(!obj[0].document.group)
+                defer.resolve({ token: token, wizard: true, id: obj[0].get('id'), name: obj[0].get('displayName'), email: obj[0].get('email') });
+		          defer.resolve({ token: token, wizard: false, id: obj[0].get('id'), name: obj[0].get('displayName'), email: obj[0].get('email') });
+        		}
+
+        		var cbuser = new CB.CloudObject('User');
+        		cbuser.set('username', email);
+        		cbuser.set('email', email);
+        		cbuser.set('password', '2zBIht@mePh<1Rf'); //dummy password
+        		cbuser.set(socialMedia.toString(), profileId);
+        		cbuser.set('picture', picture);
+				    cbuser.set('displayName', name);
+            cbuser.set('balance', 0);
+
+            cbuser.set('post', 0);
+            cbuser.set('sold', 0);
+            cbuser.set('closed', 0);
+            cbuser.set('bought', 0);
+            cbuser.set('accepted', 0);
+				    cbuser.save({
+					      success: function(user) {
+						        //Registration successfull
+        						var token = "";
+        			      defer.resolve({ token: token, wizard: true });
+      					},
+      					error: function(err){
+      						//Error in user registration.
+                  var q = new CB.CloudQuery('User');
+                  q.equalTo('email',profile.email);
+                  q.findOne({
+                    success: function(obj){
+                      if(obj){
+                        obj.set('facebook', profile.id);
+                        obj.save({
+                          success: function(){
+                            //Registration successfull
+                            var token = createJWT(obj.get('id'));
+                           
+                            defer.resolve({ token: token, wizard: false, id: obj.get('id'), name: profile.name, email: profile.email });
+                          },
+                          error: function(err){
+                            console.log(err);
+                            defer.reject({message: 'Oops!! somthing went wrong while logging in..'});
+                          }
+                        });
+                      }else {
+                        console.log(err);
+                        defer.reject({message: 'Oops!! somthing went wrong while logging in..'});
+                      }
+                    },
+                    error: function(err){
+                      defer.reject();
+                    }
+                  });
+      						defer.reject();
+      					}
+      				});
+        	},
+        	error: function(err){
+        		defer.reject();
+        	}
+        });
+        return defer.promise;
+      }
+    };
+  })
+  .factory('Token', function($http) {
+    return {   
+      createJWT: function(userId){
+        return $http.get(fyipeUrl+'/jwt/token/'+userId);
+      }
+    }
+  })
   .factory('FeedService', function($http, $rootScope, $q) {
     return {
       fetch: function(count) {
@@ -361,4 +485,95 @@ angular.module('fyipe.services', [])
       return defer.promise;
     }
   };
-});
+})
+.factory('GroupService', function($http, $rootScope, $q) {
+    return {
+      fetch: function(count) {
+        return $http.get(fyipeUrl+'/group/fetch/'+count);
+      },
+      members: function(){
+        return $http.get(fyipeUrl+'/group/members');
+      },
+      save: function(feedData){
+        return $http.post(fyipeUrl+'/group/save', feedData);
+      },
+      pendingDeal: function(){
+        return $http.get(fyipeUrl+'/feed/pending/group');
+      },
+      ownIt: function(feed){
+        var defer = $q.defer();
+        var list=[];
+        for (var i = 0; i < feed.length; i++) {
+          if(feed[i].document)
+            if(feed[i].document.soldToUser){
+              var feedObj = new CB.CloudObject('GroupFeed', feed[i].document._id);
+              list[i] = feedObj;
+            }
+        }
+        var query = new CB.CloudQuery('buyerStatus');
+        var buyer = new CB.CloudObject('User', $rootScope.userProfile.document._id);
+        query.equalTo('buyer', buyer);
+        //query.equalTo('dealStatus', 'close');
+        query.exists('groupFeed');
+        query.equalTo('paymentStatus', 'success');
+        query.containedIn('groupFeed', list);
+        query.find({
+          success: function(status){
+            defer.resolve(status);
+          }
+        });
+        return defer.promise;
+      },
+      soldDeal: function(){
+        var defer = $q.defer();
+        var query = new CB.CloudQuery('GroupFeed');
+        var user = new CB.CloudObject('User', $rootScope.userProfile.document._id);
+        query.equalTo('user', user);
+        query.include('user');
+        query.exists('buyer');
+        query.orderByDesc('updatedAt');
+        query.find({
+          success: function(feed){
+            var soldDeal = [];
+            for (var i = 0; i < feed.length; i++) {
+                var member = feed[i].get('buyer');
+                if(member.length > 0){
+                    soldDeal.push(feed[i]);
+                }
+            }
+            defer.resolve(soldDeal);
+          },
+          error: function(err){
+            defer.reject(err);
+          }
+        });
+        return defer.promise;
+      },
+      groupName: function(data){
+        var defer = $q.defer();
+        var query = new CB.CloudQuery('Location');
+        query.findById(data,{
+          success: function(location){
+            defer.resolve(location.document.city);
+          },error: function(err){
+            defer.reject(err);
+          }
+        });
+        return defer.promise;
+      },
+      soldDealStatus: function(feedId){
+        var defer = $q.defer();
+        var query = new CB.CloudQuery('buyerStatus');
+        var feed = new CB.CloudObject('GroupFeed', feedId);
+        query.include('buyer');
+        query.equalTo('groupFeed', feed);
+        query.find({
+          success: function(data){
+            console.log(data);
+            defer.resolve(data);
+          }
+        });
+        return defer.promise;
+      }
+    };
+  });

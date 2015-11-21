@@ -9,7 +9,7 @@ underscore.factory('_', function() {
   return window._; //Underscore must already be loaded on the page
 });
 
-angular.module('fyipe', ['ionic', 'fyipe.controllers', 'fyipe.services', 'satellizer', 'underscore', 'mentio', 'ngTagsInput'])
+angular.module('fyipe', ['ionic', 'fyipe.controllers', 'fyipe.services', 'satellizer', 'underscore', 'mentio', 'ngTagsInput', 'ngCordova'])
 
 .run(function($ionicPlatform, $rootScope, $interval) {
   $ionicPlatform.ready(function() {
@@ -31,7 +31,7 @@ angular.module('fyipe', ['ionic', 'fyipe.controllers', 'fyipe.services', 'satell
   profession.setLimit(2000);
   profession.find({
     success: function(list){
-      $rootScope.profession = $rootScope.serialize(list);
+      $rootScope.profession = list;
     },
     error: function(err) {
       console.log(err);
@@ -43,7 +43,7 @@ angular.module('fyipe', ['ionic', 'fyipe.controllers', 'fyipe.services', 'satell
   query.selectColumn('country');
   query.find({
     success: function(list){
-      $rootScope.location = $rootScope.serialize(list);
+      $rootScope.location = list;
     },
     error: function(err) {
       console.log(err);
@@ -51,7 +51,7 @@ angular.module('fyipe', ['ionic', 'fyipe.controllers', 'fyipe.services', 'satell
   });
 
   $rootScope.serialize = function(object){
-    var seen = [];
+    /*var seen = [];
     return JSON.stringify(object, function(key, val) {
      if (val !== null && typeof val == "object") {
           if (seen.indexOf(val) >= 0) {
@@ -60,7 +60,8 @@ angular.module('fyipe', ['ionic', 'fyipe.controllers', 'fyipe.services', 'satell
           seen.push(val);
       }
       return val;
-    });
+    });*/
+    return JSON.stringify(CB.toJSON(object));
   };
   $rootScope.activeUserList = [];
   $rootScope.notificationCount = 0;
@@ -177,7 +178,7 @@ angular.module('fyipe', ['ionic', 'fyipe.controllers', 'fyipe.services', 'satell
          template: null,
          controller: 'LogoutCtrl',
          resolve: {
-           authenticated: function($q, $location, $auth) {
+           authenticated: function($q, $state, $auth) {
              var deferred = $q.defer();
              if (!$auth.isAuthenticated()) {
                $state.go('app.login');
@@ -220,6 +221,7 @@ angular.module('fyipe', ['ionic', 'fyipe.controllers', 'fyipe.services', 'satell
   })
   .state('app.newpost', {
     url: '/newpost',
+    params:{'type': null},
     views: {
       'menuContent': {
         templateUrl: 'templates/newPost.html',
